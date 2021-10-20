@@ -51,17 +51,9 @@ public partial class ObjectPoolManager : MonoBehaviour
     {
         if (!poolDictionary.ContainsKey(gameObject.name))
         {
-           // Queue<GameObject> poolQueue = new Queue<GameObject>();
-
             GameObject newGameObject = Instantiate(gameObject);
             newGameObject.name = gameObject.name;
-            //newGameObject.transform.parent = this.transform;
-            //poolQueue.Enqueue(newGameObject);
-            //poolDictionary.Add(gameObject.name, poolQueue);
-            //newGameObject = poolDictionary[gameObject.name].Dequeue();
-            //poolDictionary[gameObject.name].Enqueue(newGameObject);
             return newGameObject;
-            //return null;
         }
         else
         {

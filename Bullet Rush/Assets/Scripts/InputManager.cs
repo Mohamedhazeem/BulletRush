@@ -12,7 +12,7 @@ public class InputManager : MonoBehaviour
     public event MovePlayerCallback OnMovePlayer;
 
 
-    [SerializeField] private Transform player;
+    [SerializeField] private GameObject player;
 
     //[SerializeField] private GameObject startText;
 
@@ -44,14 +44,14 @@ public class InputManager : MonoBehaviour
         if (Input.GetMouseButtonDown(0))
         {
             mouseStartPos = orthographicCamera.ScreenToWorldPoint(Input.mousePosition);
-            mouseStartPos.y = player.position.y;
+            mouseStartPos.y = player.transform.position.y;
         }
 
         else if (Input.GetMouseButton(0))
         {
             mouseCurrentPos = orthographicCamera.ScreenToWorldPoint(Input.mousePosition);
 
-            mouseCurrentPos.y = player.position.y;
+            mouseCurrentPos.y = player.transform.position.y;
             dragDirection = mouseCurrentPos - mouseStartPos;
            
             if (dragDirection.magnitude > 0.2f)

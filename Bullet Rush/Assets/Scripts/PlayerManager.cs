@@ -8,8 +8,8 @@ public class PlayerManager : MonoBehaviour
     public LayerMask layerMask;
     [Header("Player Spawn Point")]
     [SerializeField] Transform playerSpawnPoint;
-
-    public Transform currentPlayer;
+    public GameObject bullectReference;
+    public GameObject currentPlayer;
 
     [Header("Players")]
     [SerializeField] GameObject playerCrowPrefab;
@@ -25,8 +25,8 @@ public class PlayerManager : MonoBehaviour
             Destroy(this);
         }
 
-        Instantiate(playerCrowPrefab, playerSpawnPoint.position, Quaternion.identity);
-        currentPlayer = playerCrowPrefab.transform;
+        currentPlayer = Instantiate(playerCrowPrefab, playerSpawnPoint.position, Quaternion.identity);
+        //currentPlayer = playerCrowPrefab.transform;
     }
 
     // Update is called once per frame

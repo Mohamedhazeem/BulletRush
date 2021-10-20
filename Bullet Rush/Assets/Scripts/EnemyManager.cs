@@ -44,7 +44,7 @@ public class EnemyManager : MonoBehaviour
 
     void Start()
     {
-       // InstantiateEnemies();
+        //InstantiateEnemies();
     }
     void Update()
     {
@@ -53,38 +53,29 @@ public class EnemyManager : MonoBehaviour
 
     private void InstantiateEnemies()
     {
-        foreach (EnemySpawnPoints enemySpawnpoint in enemySpawnPoints)
+        foreach (EnemySpawnPoints enemySpawnPoint in enemySpawnPoints)
         {
-
-            for (float x = -enemySpawnpoint.xAxisValue; x <= enemySpawnpoint.xAxisValue; x += 1f)
+            for (int i = 0; i < enemySpawnPoint.xAxisRight; i++) //coloumn
             {
-                for (float z = -enemySpawnpoint.zAxisValue; z <= enemySpawnpoint.zAxisValue; z += 1f)
+             
+                for (int j = 0; j < enemySpawnPoint.zAxisDown; j++) // row
                 {
-                    for (int i = 0; i < enemySpawnpoint.enemyCount; i++)
-                    {
-                        enemyGameobject = ObjectPoolManager.instance.GetObjectFromPool(enemyPrefab[0]);
-
-
-                    }
-                    enemyPositionOnSpawnPoint.x = x;
+                    enemyGameobject = ObjectPoolManager.instance.GetObjectFromPool(enemyPrefab[0]);
+                    enemyGameobject.transform.parent = enemySpawnPoint.spawnPoint.transform;
+                    enemyPositionOnSpawnPoint.x = enemySpawnPoint.spawnPoint.position.x + i * 1.5f;
                     enemyPositionOnSpawnPoint.y = enemySpawnPositionOnY;
-                    enemyPositionOnSpawnPoint.z = z;
-                    Debug.LogWarning(enemyPositionOnSpawnPoint);
+                    enemyPositionOnSpawnPoint.z = enemySpawnPoint.spawnPoint.position.z + j * 1.5f;
                     enemyGameobject.transform.position = enemyPositionOnSpawnPoint;
+
                 }
             }
         }
     }
 }
 
-
-
 [System.Serializable]
 public class EnemySpawnPoints
 {
     public Transform spawnPoint;
-    public int enemyCount;
-    public float xAxisValue,zAxisValue;
-    
-    
+    public float  xAxisRight, zAxisDown;
 }
