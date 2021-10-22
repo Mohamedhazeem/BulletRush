@@ -26,9 +26,9 @@ public class Enemy : MonoBehaviour
         transform.rotation = Quaternion.Lerp(this.transform.rotation, rotation, rotationSpeed * Time.deltaTime);
         
     }
-    void OnCollisionEnter(Collision other)
+    void OnTriggerEnter(Collider other)
     {
-        if (other.collider.CompareTag("Bullet"))
+        if (other.CompareTag("Bullet"))
         {
             RemoveFromEnemiesList();
             ObjectPoolManager.instance.ReturnToObjectPool(this.gameObject);

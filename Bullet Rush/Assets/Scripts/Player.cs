@@ -8,46 +8,54 @@ public class Player : MonoBehaviour
     private Rigidbody playerParentRigidbody;
 
     [SerializeField] private float rotateSpeed;
+    [SerializeField] private float dragSpeed;
     [SerializeField] private float speed;
 
     [SerializeField] private Transform rightHandParent;
     [SerializeField] private Transform leftHandParent;
 
     [SerializeField] private GameObject rightHandPivot;
+    [SerializeField] private GameObject leftHandPivot;
 
     Dictionary<Transform, float> unsortedDictionary = new Dictionary<Transform, float>();
-    public float timeToClearList;
-    private float totalTimeToClearList;
+
     public List<Transform> nearestEnemyList;
 
     public Transform playerForwardPoint;
-    private float totalAngle = 0f;
+    private float totalAngleForRightHand = 0f;
+    private float totalAngleForLeftHand = 0f;
     private float angleBetweenBodyAndForwardPoint = 0f;
     private Vector3 offset;
     private float angle;
     RaycastHit hit;
+    [SerializeField] private float shootInterval;
+    private float nextTime;
+    private float nextTime1;
+
     void Start()
     {
         playerParentRigidbody = transform.parent.GetComponent<Rigidbody>();
-        InputManager.instance.OnRotatePlayer += Rotate;
+       // InputManager.instance.OnRotatePlayer += Rotate;
         InputManager.instance.OnMovePlayer += Move;
 
-        totalTimeToClearList = timeToClearList;
-        rightHandParent = transform.Find("RightHandHolder");
-        leftHandParent = transform.Find("LeftHandHolder");
-       // rightHandPivot = transform.GetChild(2).Find("Pivot").gameObject;
+        nextTime = shootInterval;
+        nextTime1 = shootInterval;
+        //rightHandParent = transform.Find("RightHandHolder");
+        //leftHandParent = transform.Find("LeftHandHolder");
+
         nearestEnemyList = new List<Transform>();
         StartCoroutine("NearestEnemy");
     }
     
     private void Update()
     {
-
         CreateEnemyList();
-       // FindNearestEnemy();
-        Shoot();
-
-        //ClearEnemyList();
+        Rotate();
+    }
+    private void Move()
+    {
+        var i = InputManager.instance.dragDirection * Time.deltaTime * dragSpeed;
+        playerParentRigidbody.velocity = i;
     }
     private void Rotate()
     {
@@ -55,23 +63,90 @@ public class Player : MonoBehaviour
         {
             return;
         }
-        offset = nearestEnemyList[0].position - transform.position;
-        // roate toward between two enemy common points
-        angle = Mathf.Atan2(offset.x, offset.z) * Mathf.Rad2Deg;
-        Debug.LogWarning(angle);
-        HandRotateTowardEnemy();
-        if (Vector3.Distance(transform.position, nearestEnemyList[0].position) < 8)
+
+        if(nearestEnemyList.Count == 1)
         {
-            transform.rotation = Quaternion.Lerp(transform.rotation, Quaternion.AngleAxis(angle, Vector3.up), Time.deltaTime * rotateSpeed);
-            
+            offset = nearestEnemyList[0].position - transform.position;
+            // roate toward between two enemy common points
+            angle = Mathf.Atan2(offset.x, offset.z) * Mathf.Rad2Deg;
+
+            if (Vector3.Distance(transform.position, nearestEnemyList[0].position) < 10)
+            {
+                transform.rotation = Quaternion.Lerp(transform.rotation, Quaternion.AngleAxis(angle, Vector3.up), Time.deltaTime * rotateSpeed);
+                RightHandRotateTowardEnemy();
+                LeftHandRotateTowardEnemy();
+            }
+            else
+            {
+                transform.rotation = Quaternion.Lerp(transform.rotation, Quaternion.AngleAxis(InputManager.instance.angle, Vector3.up), Time.deltaTime * rotateSpeed);
+                HandRotateTowardInitialRotation();
+            }
         }
-        else
+        else if(nearestEnemyList.Count > 1)
         {
-            transform.rotation = Quaternion.Lerp(transform.rotation, Quaternion.AngleAxis(InputManager.instance.angle, Vector3.up), Time.deltaTime * rotateSpeed);
-            HandRotateTowardInitialRotation();
+
+            Debug.Log(nearestEnemyList[0].position);
+            Debug.Log(nearestEnemyList[1].position);
+            var commonPoint = nearestEnemyList[0].position + nearestEnemyList[1].position;
+            Debug.Log(commonPoint);
+            commonPoint /= 2;
+            Debug.Log("after" + commonPoint);
+
+            offset = commonPoint - transform.position;
+            Debug.Log("Offset" + offset);
+            // roate toward between two enemy common points
+            angle = Mathf.Atan2(offset.x, offset.z) * Mathf.Rad2Deg;
+            Debug.Log("Angle" + angle);
+            if (Vector3.Distance(transform.position, commonPoint) < 15 && Vector3.Distance(transform.position, commonPoint) > 2)
+            {
+                transform.rotation = Quaternion.Lerp(transform.rotation, Quaternion.AngleAxis(angle, Vector3.up), Time.deltaTime * rotateSpeed);
+                RightHandRotateTowardEnemy();
+                LeftHandRotateTowardEnemy();
+            }
+            else
+            {
+                transform.rotation = Quaternion.Lerp(transform.rotation, Quaternion.AngleAxis(InputManager.instance.angle, Vector3.up), Time.deltaTime * rotateSpeed);
+                HandRotateTowardInitialRotation();
+            }
+        }
+  
+    }
+    private void RightHandRotateTowardEnemy()
+    {
+        if (nearestEnemyList.Count == 0)
+        {
+            return;
+        }
+
+        int? rightEnemy = RightHandNearestEnemy();
+        
+        if (rightEnemy != null)
+        {
+            var differenceForRightHand = nearestEnemyList[(int)rightEnemy].position - rightHandParent.position;
+            var angleForRightHand = Mathf.Atan2(differenceForRightHand.x, differenceForRightHand.z) * Mathf.Rad2Deg;
+            rightHandParent.rotation = Quaternion.Lerp(rightHandParent.rotation, Quaternion.AngleAxis(angleForRightHand, Vector3.up), Time.deltaTime * rotateSpeed);
+            ShootRightHand();
+        }
+
+    }
+    private void LeftHandRotateTowardEnemy()
+    {
+        if (nearestEnemyList.Count == 0)
+        {
+            return;
+        }
+
+        int? leftEnemy = LeftHandNeatestEnemy();
+
+        if (leftEnemy != null)
+        {
+            var differenceForLeftHand = nearestEnemyList[(int)leftEnemy].position - leftHandParent.position;
+            var angleForLeftHand = Mathf.Atan2(differenceForLeftHand.x, differenceForLeftHand.z) * Mathf.Rad2Deg;
+
+            leftHandParent.rotation = Quaternion.Lerp(leftHandParent.rotation, Quaternion.AngleAxis(angleForLeftHand, Vector3.up), Time.deltaTime * rotateSpeed);
+           ShootLeftHand();
         }
     }
-
     private void HandRotateTowardInitialRotation()
     {
         var differenceForRightHand = playerForwardPoint.position- rightHandParent.position;
@@ -84,14 +159,7 @@ public class Player : MonoBehaviour
         leftHandParent.rotation = Quaternion.Lerp(leftHandParent.rotation, Quaternion.AngleAxis(angleForLeftHand, Vector3.up), Time.deltaTime * rotateSpeed);
     }
 
-    private void Move()
-    {
-        var i = InputManager.instance.dragDirection * Time.deltaTime * speed;
-        playerParentRigidbody.velocity = i;
-        var differenceForRightHand = playerForwardPoint.position - transform.position;
-        var angleForRightHand = Mathf.Atan2(differenceForRightHand.x, differenceForRightHand.z) * Mathf.Rad2Deg;
-        Debug.Log($"differencefor righthand {angleForRightHand}");
-    }
+
     private void OnDrawGizmosSelected()
     {
         Gizmos.DrawWireSphere(transform.position +transform.forward*5 , 20);
@@ -99,7 +167,7 @@ public class Player : MonoBehaviour
 
     private void CreateEnemyList()
     {
-        if (Physics.SphereCast(transform.position, 15, transform.forward, out hit, 10, PlayerManager.instance.layerMask))
+        if (Physics.SphereCast(transform.parent.position, 15, transform.forward, out hit, 10, PlayerManager.instance.layerMask))
         {
 
             if (EnemyManager.instance.enemyList.Contains(hit.transform))
@@ -113,114 +181,116 @@ public class Player : MonoBehaviour
                 EnemyManager.instance.enemyList.Add(hit.transform);
                 //FindNearestEnemy();
             }
-        } 
-        
-    }
-    private void FindNearestEnemy()
-    {
-        if (EnemyManager.instance.enemyList.Count > 0)
+        }
+        else if(Physics.SphereCast(transform.parent.position, 15, -transform.forward, out hit, 10, PlayerManager.instance.layerMask))
         {
-            nearestEnemyList.Clear();
-            unsortedDictionary.Clear();
-            for (int i = 0; i < EnemyManager.instance.enemyList.Count; i++)
-            {               
-                float distance = Vector3.Distance(transform.position, EnemyManager.instance.enemyList[i].position);
-               
-                unsortedDictionary[EnemyManager.instance.enemyList[i]] = distance;
-                Debug.Log(unsortedDictionary.Count);
-            }
-            foreach (var item in unsortedDictionary.OrderBy(key => key.Value))
+            if (EnemyManager.instance.enemyList.Contains(hit.transform))
             {
-                nearestEnemyList.Add(item.Key);
+                // FindNearestEnemy();
+                return;
             }
-            Debug.LogError(nearestEnemyList[0]);
+            else
+            {
+
+                EnemyManager.instance.enemyList.Add(hit.transform);
+                //FindNearestEnemy();
+            }
         }
-    } // old  nearest enemy logic
-    private void Shoot()
-    {
+   
         
-        // 0  to 90 right 
-        // o to - 90 left
+    }
+    private void ShootRightHand()
+    {       
+         if (Time.time > nextTime) 
+         {
+            nextTime = Time.time + shootInterval;
 
-        if (angle > 0 && angle < 90)
-        {
-            //if(Time.time >)
-            
-            //var gameObject = ObjectPoolManager.instance.GetObjectFromPool(PlayerManager.instance.bullectReference);
-            //gameObject.transform.position = rightHandPivot.transform.position;
-            //gameObject.GetComponent<Rigidbody>().AddForce(gameObject.transform.forward * speed);
-
-        }
-        else if (angle < 0 && angle > -90)
-        {
+            var gameObject = ObjectPoolManager.instance.GetObjectFromPool(PlayerManager.instance.bullectReference);
+            gameObject.transform.position = rightHandPivot.transform.position;
+            // gameObject.GetComponent<Rigidbody>().AddForce(rightHandPivot.transform.forward * speed);
+            gameObject.GetComponent<Rigidbody>().velocity = rightHandPivot.transform.forward * speed * Time.deltaTime;
 
         }
     }
-    private void HandRotateTowardEnemy()
+    private void ShootLeftHand()
     {
-        
-        if (nearestEnemyList.Count == 0)
+        if (Time.time > nextTime1)
         {
-            return;
-        }
+            nextTime1 = Time.time + shootInterval;
 
-        if (RightHandNearestEnemy() != null)
-        {
-            var differenceForRightHand = nearestEnemyList[(int)RightHandNearestEnemy()].position - rightHandParent.position;
-            var angleForRightHand = Mathf.Atan2(differenceForRightHand.x, differenceForRightHand.z) * Mathf.Rad2Deg;
-            rightHandParent.rotation = Quaternion.Lerp(rightHandParent.rotation, Quaternion.AngleAxis(angleForRightHand, Vector3.up), Time.deltaTime * rotateSpeed);
-            Debug.LogError("Right");
-
-            HandRotateTowardInitialRotation();
+            var gameObject = ObjectPoolManager.instance.GetObjectFromPool(PlayerManager.instance.bullectReference);
+            gameObject.transform.position = leftHandPivot.transform.position;
+            gameObject.GetComponent<Rigidbody>().velocity = leftHandPivot.transform.forward * speed * Time.deltaTime;            
         }
-        
-        if(LeftHandNeatestEnemy() != null)
-        {
-            var differenceForLeftHand = nearestEnemyList[(int)LeftHandNeatestEnemy()].position - leftHandParent.position;
-            var angleForLeftHand = Mathf.Atan2(differenceForLeftHand.x, differenceForLeftHand.z) * Mathf.Rad2Deg;
-            leftHandParent.rotation = Quaternion.Lerp(leftHandParent.rotation, Quaternion.AngleAxis(angleForLeftHand, Vector3.up), Time.deltaTime * rotateSpeed);
-            Debug.LogError("Left");
-            HandRotateTowardInitialRotation();
-        }
-            
-           
     }
+
     private int? RightHandNearestEnemy()
     {
-        var differencebetweenBodyAndForwardPoint = playerForwardPoint.position - transform.position;
+        
         for (int i = 0; i < nearestEnemyList.Count; i++)
         {
+            var differencebetweenBodyAndForwardPoint = playerForwardPoint.position - transform.position;
             var differencebetweenBodyAndNearEnemy = nearestEnemyList[i].position - transform.position;
-            angleBetweenBodyAndForwardPoint = Mathf.Atan2(differencebetweenBodyAndForwardPoint.x, differencebetweenBodyAndForwardPoint.z) * Mathf.Rad2Deg;
-            var angleBetweenBoydAndEnemy = Mathf.Atan2(differencebetweenBodyAndNearEnemy.x, differencebetweenBodyAndNearEnemy.z) * Mathf.Rad2Deg;
 
-            totalAngle = angleBetweenBodyAndForwardPoint + angleBetweenBoydAndEnemy;
-
-            if (totalAngle > 0 && totalAngle < angleBetweenBodyAndForwardPoint + 90)
+            var angleBetweenBodyAndForwardPoint = Mathf.Atan2(differencebetweenBodyAndForwardPoint.x, differencebetweenBodyAndForwardPoint.z) * Mathf.Rad2Deg;
+            var angleBetweenBodyAndEnemy = Mathf.Atan2(differencebetweenBodyAndNearEnemy.x, differencebetweenBodyAndNearEnemy.z) * Mathf.Rad2Deg;
+            angleBetweenBodyAndForwardPoint= Clamp0To360(angleBetweenBodyAndForwardPoint);
+            angleBetweenBodyAndEnemy = Clamp0To360(angleBetweenBodyAndEnemy);
+            Debug.LogError($"angleBetweenBodyAndForwardPoint = {angleBetweenBodyAndForwardPoint}");
+            totalAngleForRightHand = angleBetweenBodyAndForwardPoint + 90;
+            if(totalAngleForRightHand > 360)
             {
+                totalAngleForRightHand -= 360;
 
+            }
+            Debug.LogError($"angleBetweenBodyAndEnemy = {angleBetweenBodyAndEnemy}");
+            Debug.LogError($"right hand total angle = {totalAngleForRightHand}");
+            if ( angleBetweenBodyAndEnemy < totalAngleForRightHand )
+            {
+                Debug.LogError($"right hand nearest enemy = {nearestEnemyList[i]}");
                 return i;
             }
         }
         return null;
     }
+
     private int? LeftHandNeatestEnemy()
     {
-        var differencebetweenBodyAndForwardPoint = playerForwardPoint.position - transform.position;
         for (int i = 0; i < nearestEnemyList.Count; i++)
         {
+            var differencebetweenBodyAndForwardPoint = playerForwardPoint.position - transform.position;
             var differencebetweenBodyAndNearEnemy = nearestEnemyList[i].position - transform.position;
-            angleBetweenBodyAndForwardPoint = Mathf.Atan2(differencebetweenBodyAndForwardPoint.x, differencebetweenBodyAndForwardPoint.z) * Mathf.Rad2Deg;
-            var angleBetweenBoydAndEnemy = Mathf.Atan2(differencebetweenBodyAndNearEnemy.x, differencebetweenBodyAndNearEnemy.z) * Mathf.Rad2Deg;
 
-            totalAngle = angleBetweenBodyAndForwardPoint + angleBetweenBoydAndEnemy;
-
-            if (totalAngle < 0 && totalAngle > angleBetweenBodyAndForwardPoint - 90)
+            var angleBetweenBodyAndForwardPoint = Mathf.Atan2(differencebetweenBodyAndForwardPoint.x, differencebetweenBodyAndForwardPoint.z) * Mathf.Rad2Deg;
+            var angleBetweenBodyAndEnemy = Mathf.Atan2(differencebetweenBodyAndNearEnemy.x, differencebetweenBodyAndNearEnemy.z) * Mathf.Rad2Deg;
+            angleBetweenBodyAndForwardPoint = Clamp0To360(angleBetweenBodyAndForwardPoint);
+            angleBetweenBodyAndEnemy = Clamp0To360(angleBetweenBodyAndEnemy);
+            Debug.LogError($"angleBetweenBodyAndForwardPoint = {angleBetweenBodyAndForwardPoint}");
+            totalAngleForLeftHand = angleBetweenBodyAndForwardPoint - 90;
+            totalAngleForLeftHand = Mathf.Abs(totalAngleForLeftHand);
+            totalAngleForLeftHand = 360 - totalAngleForLeftHand;
+            //if (totalAngleForRightHand <360)
+            //{
+            //    totalAngleForRightHand += 360;
+            //}
+            Debug.LogError($"angleBetweenBodyAndEnemy = {angleBetweenBodyAndEnemy}");
+            Debug.LogError($"left hand total angle = {totalAngleForLeftHand}");
+            if (angleBetweenBodyAndEnemy < 360 && angleBetweenBodyAndEnemy > totalAngleForLeftHand)
             {
+                Debug.LogError($"left hand nearest enemy = {nearestEnemyList[i]}");
                 return i;
             }
         }
         return null;
+    }
+    public static float Clamp0To360(float eulerAngles)
+    {
+        float result = eulerAngles - Mathf.CeilToInt(eulerAngles / 360f) * 360f;
+        if (result < 0)
+        {
+            result += 360f;
+        }
+        return result;
     }
     IEnumerator NearestEnemy()
     {
@@ -242,7 +312,7 @@ public class Player : MonoBehaviour
                 }
                 
             }
-            yield return new WaitForSeconds(0.5f);
+            yield return new WaitForSeconds(0.3f);
         }
         
     }
