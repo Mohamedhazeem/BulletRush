@@ -270,9 +270,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2dcb47a0f9951364b92606cb8098dadb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  rotateSpeed: 50
-  dragSpeed: 100
-  speed: 1200
+  rotateSpeed: 20
+  dragSpeed: 500
+  speed: 100
   rightHandParent: {fileID: 4739832738263932644}
   leftHandParent: {fileID: 4739832737337818332}
   rightHandPivot: {fileID: 8826377195767686862}

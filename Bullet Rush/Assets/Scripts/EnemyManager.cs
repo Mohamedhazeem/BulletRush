@@ -44,7 +44,7 @@ public class EnemyManager : MonoBehaviour
 
     void Start()
     {
-        //InstantiateEnemies();
+        InstantiateEnemies();
     }
     void Update()
     {
