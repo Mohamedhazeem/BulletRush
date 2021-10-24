@@ -279,7 +279,7 @@ MonoBehaviour:
   leftHandPivot: {fileID: 3779353390528132873}
   nearestEnemyList: []
   playerForwardPoint: {fileID: 7934278786412888539}
-  shootInterval: 0.3
+  shootInterval: 0.2
 --- !u!1 &4739832738263932645
 GameObject:
   m_ObjectHideFlags: 0

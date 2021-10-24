@@ -3,25 +3,17 @@ using UnityEngine;
 public class InputManager : MonoBehaviour
 {
     public static InputManager instance;
-    [SerializeField] Camera orthographicCamera;
-    
-    public delegate void RotatePlayerCallback();
-    public event RotatePlayerCallback OnRotatePlayer;
+    [SerializeField] Camera orthographicCamera;    
 
     public delegate void MovePlayerCallback();
     public event MovePlayerCallback OnMovePlayer;
 
-
     [SerializeField] private GameObject player;
-
-    //[SerializeField] private GameObject startText;
 
     private Vector3 mouseStartPos;
     private Vector3 mouseCurrentPos;
     public Vector3 dragDirection;
-    public float angle;
-    
-    // public float angleValue;
+    public float angle;    
     private void Awake()
     {
         if (instance == null)
@@ -33,7 +25,6 @@ public class InputManager : MonoBehaviour
             Destroy(this.gameObject);
         }
     }
-    // Start is called before the first frame update
     void Start()
     {        
         player = PlayerManager.instance.currentPlayer;
@@ -58,7 +49,6 @@ public class InputManager : MonoBehaviour
             {                
                 angle = Mathf.Atan2(dragDirection.x, dragDirection.z) * Mathf.Rad2Deg;
                 OnMovePlayer?.Invoke();
-                OnRotatePlayer?.Invoke();
             }
         }
     }

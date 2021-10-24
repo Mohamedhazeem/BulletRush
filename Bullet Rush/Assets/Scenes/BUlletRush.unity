@@ -470,7 +470,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3681042572217119620, guid: 9cacf18256c292f41b55bb570c6dad76, type: 3}
       propertyPath: m_IsActive
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6479271911282410014, guid: 9cacf18256c292f41b55bb570c6dad76, type: 3}
       propertyPath: m_RootOrder
@@ -555,7 +555,7 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 64
   playerSpawnPoint: {fileID: 1473630594}
-  bullectReference: {fileID: 9069963296323646760, guid: 4520362b658f2ca43924056b10a17316, type: 3}
+  bulletReference: {fileID: 9069963296323646760, guid: 4520362b658f2ca43924056b10a17316, type: 3}
   currentPlayer: {fileID: 0}
   playerCrowPrefab: {fileID: 6213015133400787900, guid: 4cfe8b3ec6cb2d5479f66b57cf5ee177, type: 3}
 --- !u!4 &462589820
@@ -1259,7 +1259,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3681042572217119620, guid: 9cacf18256c292f41b55bb570c6dad76, type: 3}
       propertyPath: m_IsActive
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6479271911282410014, guid: 9cacf18256c292f41b55bb570c6dad76, type: 3}
       propertyPath: m_RootOrder
@@ -1677,7 +1677,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3681042572217119620, guid: 9cacf18256c292f41b55bb570c6dad76, type: 3}
       propertyPath: m_IsActive
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6479271911282410014, guid: 9cacf18256c292f41b55bb570c6dad76, type: 3}
       propertyPath: m_RootOrder

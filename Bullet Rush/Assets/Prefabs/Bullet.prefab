@@ -109,6 +109,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   bulletRigidbody: {fileID: 0}
-  time: 5
+  time: 2
   speed: 10
   bulletForward: {x: 0, y: 0, z: 0}

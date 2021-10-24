@@ -17,34 +17,35 @@ public class Player : MonoBehaviour
     [SerializeField] private GameObject rightHandPivot;
     [SerializeField] private GameObject leftHandPivot;
 
+    public Transform playerForwardPoint;
+    [SerializeField] private float shootInterval;
+
     Dictionary<Transform, float> unsortedDictionary = new Dictionary<Transform, float>();
 
     public List<Transform> nearestEnemyList;
-
-    public Transform playerForwardPoint;
+    
     private float totalAngleForRightHand = 0f;
-    private float totalAngleForBodyAndEnemy;
     private float totalAngleForLeftHand = 0f;
     private float angleBetweenBodyAndForwardPoint = 0f;
+
     private Vector3 offset;
     private float angle;
     RaycastHit hit;
-    [SerializeField] private float shootInterval;
-    private float nextTime;
-    private float nextTime1;
+
+    private float nextTimeForRightShoot;
+    private float nextTimeForLeftShoot;
 
     void Start()
     {
+
         playerParentRigidbody = transform.parent.GetComponent<Rigidbody>();
-       // InputManager.instance.OnRotatePlayer += Rotate;
+        nearestEnemyList = new List<Transform>();
+
         InputManager.instance.OnMovePlayer += Move;
 
-        nextTime = shootInterval;
-        nextTime1 = shootInterval;
-        //rightHandParent = transform.Find("RightHandHolder");
-        //leftHandParent = transform.Find("LeftHandHolder");
+        nextTimeForRightShoot = shootInterval;
+        nextTimeForLeftShoot = shootInterval;
 
-        nearestEnemyList = new List<Transform>();
         StartCoroutine("NearestEnemy");
     }
     
@@ -57,6 +58,10 @@ public class Player : MonoBehaviour
     {
         var i = InputManager.instance.dragDirection * Time.deltaTime * dragSpeed;
         playerParentRigidbody.velocity = i;
+        if (nearestEnemyList.Count == 0)
+        {
+            transform.rotation = Quaternion.Lerp(transform.rotation, Quaternion.AngleAxis(InputManager.instance.angle, Vector3.up), Time.deltaTime * rotateSpeed);
+        }
     }
     private void Rotate()
     {
@@ -85,7 +90,7 @@ public class Player : MonoBehaviour
         }
         else if (nearestEnemyList.Count > 1)
         {
-            if (Vector3.Distance(transform.position, nearestEnemyList[0].position)> 5 && Vector3.Distance(transform.position, nearestEnemyList[1].position) > 5)
+            if (Vector3.Distance(transform.position, nearestEnemyList[0].position) < 20 && Vector3.Distance(transform.position, nearestEnemyList[1].position) < 20 )
             {
 
                 var commonPoint = nearestEnemyList[0].position + nearestEnemyList[1].position;
@@ -99,26 +104,7 @@ public class Player : MonoBehaviour
                     RightHandRotateTowardEnemy();
                     LeftHandRotateTowardEnemy();
 
-            }
-            else
-            {
-                offset = nearestEnemyList[0].position - transform.position;
-
-                angle = Mathf.Atan2(offset.x, offset.z) * Mathf.Rad2Deg;
-
-                if (Vector3.Distance(transform.position, nearestEnemyList[0].position) < 10)
-                {
-                    transform.rotation = Quaternion.Lerp(transform.rotation, Quaternion.AngleAxis(angle, Vector3.up), Time.deltaTime * rotateSpeed);
-                    RightHandRotateTowardEnemy();
-                    LeftHandRotateTowardEnemy();
-                }
-                else
-                {
-                    transform.rotation = Quaternion.Lerp(transform.rotation, Quaternion.AngleAxis(InputManager.instance.angle, Vector3.up), Time.deltaTime * rotateSpeed);
-                    HandRotateTowardInitialRotation();
-                }
-            }
-
+            }          
         }
 
     }
@@ -130,7 +116,7 @@ public class Player : MonoBehaviour
         }
 
         int? rightEnemy = RightHandNearestEnemy();
-        int? leftEnemy = LeftHandNeatestEnemy();
+
         if (rightEnemy != null)
         {
             var differenceForRightHand = nearestEnemyList[(int)rightEnemy].position - rightHandParent.position;
@@ -140,11 +126,7 @@ public class Player : MonoBehaviour
         }
         else
         {
-            HandRotateTowardInitialRotation();
-            if(LeftHandNeatestEnemy() != null && Vector3.Distance(nearestEnemyList[(int)leftEnemy].position, leftHandParent.position) < 10)
-            {
-                ShootRightHand();
-            }            
+           HandRotateTowardInitialRotation();
         }
     }
     private void LeftHandRotateTowardEnemy()
@@ -155,27 +137,30 @@ public class Player : MonoBehaviour
         }
 
         int? leftEnemy = LeftHandNeatestEnemy();
-        int? rightEnemy = RightHandNearestEnemy();
+
         if (leftEnemy != null)
         {
             var differenceForLeftHand = nearestEnemyList[(int)leftEnemy].position - leftHandParent.position;
             var angleForLeftHand = Mathf.Atan2(differenceForLeftHand.x, differenceForLeftHand.z) * Mathf.Rad2Deg;
 
             leftHandParent.rotation = Quaternion.Lerp(leftHandParent.rotation, Quaternion.AngleAxis(angleForLeftHand, Vector3.up), Time.deltaTime * rotateSpeed);
-           ShootLeftHand();
+            ShootLeftHand();
         }
         else
         {
             HandRotateTowardInitialRotation();
-            if(RightHandNearestEnemy() != null && Vector3.Distance(nearestEnemyList[(int)rightEnemy].position, leftHandParent.position) < 10)
-            {
-                ShootLeftHand();
-            }
-            
         }
     }
     private void HandRotateTowardInitialRotation()
     {
+        if (LeftHandNeatestEnemy()==null)
+        {
+            ShootLeftHand();
+        }
+        else if( RightHandNearestEnemy() == null)
+        {
+            ShootRightHand();
+        }
         var differenceForRightHand = playerForwardPoint.position- rightHandParent.position;
         var differenceForLeftHand = playerForwardPoint.position - leftHandParent.position;
 
@@ -199,28 +184,23 @@ public class Player : MonoBehaviour
 
             if (EnemyManager.instance.enemyList.Contains(hit.transform))
             {
-               // FindNearestEnemy();
                 return;
             }
             else
             {
                 
                 EnemyManager.instance.enemyList.Add(hit.transform);
-                //FindNearestEnemy();
             }
         }
         else if(Physics.SphereCast(transform.parent.position, 15, -transform.forward, out hit, 10, PlayerManager.instance.layerMask))
         {
             if (EnemyManager.instance.enemyList.Contains(hit.transform))
-            {
-                // FindNearestEnemy();
+            {               
                 return;
             }
             else
             {
-
                 EnemyManager.instance.enemyList.Add(hit.transform);
-                //FindNearestEnemy();
             }
         }
    
@@ -228,11 +208,10 @@ public class Player : MonoBehaviour
     }
     private void ShootRightHand()
     {       
-         if (Time.time > nextTime) 
+         if (Time.time > nextTimeForRightShoot) 
          {
-            nextTime = Time.time + shootInterval;
-
-            var gameObject = ObjectPoolManager.instance.GetObjectFromPool(PlayerManager.instance.bullectReference);
+            nextTimeForRightShoot = Time.time + shootInterval;
+            var gameObject = ObjectPoolManager.instance.GetObjectFromPool(PlayerManager.instance.bulletReference);
             gameObject.transform.position = rightHandPivot.transform.position;
             gameObject.GetComponent<Bullet>().bulletForward = rightHandPivot.transform.forward;
 
@@ -240,11 +219,10 @@ public class Player : MonoBehaviour
     }
     private void ShootLeftHand()
     {
-        if (Time.time > nextTime1)
+        if (Time.time > nextTimeForLeftShoot)
         {
-            nextTime1 = Time.time + shootInterval;
-
-            var gameObject = ObjectPoolManager.instance.GetObjectFromPool(PlayerManager.instance.bullectReference);
+            nextTimeForLeftShoot = Time.time + shootInterval;
+            var gameObject = ObjectPoolManager.instance.GetObjectFromPool(PlayerManager.instance.bulletReference);
             gameObject.transform.position = leftHandPivot.transform.position;
             gameObject.GetComponent<Bullet>().bulletForward = leftHandPivot.transform.forward;         
         }
@@ -258,25 +236,21 @@ public class Player : MonoBehaviour
             var differencebetweenBodyAndForwardPoint = playerForwardPoint.position - transform.position;
             var differencebetweenBodyAndNearEnemy = nearestEnemyList[i].position - transform.position;
 
-            var angleBetweenBodyAndForwardPoint = Mathf.Atan2(differencebetweenBodyAndForwardPoint.x, differencebetweenBodyAndForwardPoint.z) * Mathf.Rad2Deg;
+            angleBetweenBodyAndForwardPoint = Mathf.Atan2(differencebetweenBodyAndForwardPoint.x, differencebetweenBodyAndForwardPoint.z) * Mathf.Rad2Deg;
             var angleBetweenBodyAndEnemy = Mathf.Atan2(differencebetweenBodyAndNearEnemy.x, differencebetweenBodyAndNearEnemy.z) * Mathf.Rad2Deg;
 
-            angleBetweenBodyAndForwardPoint= Clamp0To360(angleBetweenBodyAndForwardPoint);
-            angleBetweenBodyAndEnemy = Clamp0To360(angleBetweenBodyAndEnemy);
-
-            Debug.LogError($"angleBetweenBodyAndForwardPoint = {angleBetweenBodyAndForwardPoint}");
-
             totalAngleForRightHand = angleBetweenBodyAndForwardPoint + 90;
-         
+            totalAngleForRightHand = Clamp0To360(totalAngleForRightHand);
+            angleBetweenBodyAndForwardPoint = Clamp0To360(angleBetweenBodyAndForwardPoint);
+            angleBetweenBodyAndEnemy = Clamp0To360(angleBetweenBodyAndEnemy);
+                    
             if(totalAngleForRightHand > 360)
             {
                 totalAngleForRightHand -= 360;
             }
-            Debug.LogError($"angleBetweenBodyAndEnemy = {angleBetweenBodyAndEnemy}");
-            Debug.LogError($"right hand total angle = {totalAngleForRightHand}");
-            if (angleBetweenBodyAndEnemy < totalAngleForRightHand )
+
+            if ( angleBetweenBodyAndEnemy < totalAngleForRightHand)
             {
-                Debug.LogError($"right hand nearest enemy = {nearestEnemyList[i]}");
                 return i;
             }
         }
@@ -288,25 +262,18 @@ public class Player : MonoBehaviour
         for (int i = 0; i < nearestEnemyList.Count; i++)
         {
             var differencebetweenBodyAndForwardPoint = playerForwardPoint.position - transform.position;
-            var differencebetweenBodyAndNearEnemy = nearestEnemyList[i].position - transform.position;
+            var differencebetweenBodyAndNearEnemy =  nearestEnemyList[i].position - transform.position;
 
             var angleBetweenBodyAndForwardPoint = Mathf.Atan2(differencebetweenBodyAndForwardPoint.x, differencebetweenBodyAndForwardPoint.z) * Mathf.Rad2Deg;
             var angleBetweenBodyAndEnemy = Mathf.Atan2(differencebetweenBodyAndNearEnemy.x, differencebetweenBodyAndNearEnemy.z) * Mathf.Rad2Deg;
 
+            totalAngleForLeftHand = angleBetweenBodyAndForwardPoint - 90;
+            totalAngleForLeftHand = Clamp0To360(totalAngleForLeftHand);
             angleBetweenBodyAndForwardPoint = Clamp0To360(angleBetweenBodyAndForwardPoint);
             angleBetweenBodyAndEnemy = Clamp0To360(angleBetweenBodyAndEnemy);
 
-            Debug.LogError($"angleBetweenBodyAndForwardPoint = {angleBetweenBodyAndForwardPoint}");
-            totalAngleForLeftHand = angleBetweenBodyAndForwardPoint - 90;
-
-            totalAngleForLeftHand = 360 - totalAngleForLeftHand;
-
-            Debug.LogError($"angleBetweenBodyAndEnemy = {angleBetweenBodyAndEnemy}");
-            Debug.LogError($"left hand total angle = {totalAngleForLeftHand}");
-
-            if (angleBetweenBodyAndEnemy < 360 && angleBetweenBodyAndEnemy > totalAngleForLeftHand)
-            {
-                Debug.LogError($"left hand nearest enemy = {nearestEnemyList[i]}");
+            if ( angleBetweenBodyAndEnemy > totalAngleForLeftHand && angleBetweenBodyAndEnemy < 360)
+            {             
                 return i;
             }
         }
@@ -339,7 +306,12 @@ public class Player : MonoBehaviour
                 {
                     nearestEnemyList.Add(item.Key);
                 }
-                
+
+            }
+            else
+            {
+                nearestEnemyList.Clear();
+                unsortedDictionary.Clear();
             }
             yield return new WaitForSeconds(0.1f);
         }

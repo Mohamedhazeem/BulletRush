@@ -5,13 +5,6 @@ using UnityEngine;
 
 public class EnemyManager : MonoBehaviour
 {
-    /// <summary>
-    /// Enemy types
-    /// spawn enemies
-    /// Enemy Die
-    /// </summary>
-    // Start is called before the first frame update
-
     public static EnemyManager instance;
 
     [Header("Enemy Spawn Points")]
@@ -25,10 +18,7 @@ public class EnemyManager : MonoBehaviour
     public List<Transform> enemyList;
 
     private GameObject enemyGameobject;
-    private Vector3 enemyPositionOnSpawnPoint = new Vector3();
-
-    
-
+    private Vector3 enemyPositionOnSpawnPoint = new Vector3();    
     private void Awake()
     {
         if (instance == null)
@@ -46,11 +36,6 @@ public class EnemyManager : MonoBehaviour
     {
         InstantiateEnemies();
     }
-    void Update()
-    {
-        
-    }
-
     private void InstantiateEnemies()
     {
         foreach (EnemySpawnPoints enemySpawnPoint in enemySpawnPoints)

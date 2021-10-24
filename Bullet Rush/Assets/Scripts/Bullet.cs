@@ -3,14 +3,17 @@ using System.Collections;
 
 public class Bullet : MonoBehaviour
 {
-    public Rigidbody bulletRigidbody;
     [SerializeField] private float time;
     [SerializeField] private float speed;
     public Vector3 bulletForward;
-    private void Start()
+ 
+    private void OnEnable()
     {
-        //time = 3f;
-
+        StartCoroutine(ReturnToobjectPool());
+    }
+    private void OnDisable()
+    {
+        StopCoroutine(ReturnToobjectPool());
     }
     private void Update()
     {
@@ -20,22 +23,16 @@ public class Bullet : MonoBehaviour
     private void OnTriggerEnter(Collider other)
     {
         transform.rotation = Quaternion.identity;
-        //time = 0;
-        StopCoroutine("ReturnToobjectPool");
+       // StopCoroutine("ReturnToobjectPool");
         ObjectPoolManager.instance.ReturnToObjectPool(this.gameObject);
     }
-    IEnumerator Move(GameObject pivot)
+
+    IEnumerator ReturnToobjectPool()
     {
-        gameObject.transform.Translate(pivot.transform.forward * speed * Time.deltaTime);
         yield return new WaitForSeconds(time);
         transform.rotation = Quaternion.identity;
+        transform.position = Vector3.zero;
         ObjectPoolManager.instance.ReturnToObjectPool(this.gameObject);
     }
-    //IEnumerator ReturnToobjectPool()
-    //{
-    //    yield return new WaitForSeconds(time);
-    //    transform.rotation = Quaternion.identity;
-    //    ObjectPoolManager.instance.ReturnToObjectPool(this.gameObject);
-    //}
 }
 
