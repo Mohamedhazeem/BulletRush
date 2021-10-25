@@ -153,14 +153,14 @@ public class Player : MonoBehaviour
     }
     private void HandRotateTowardInitialRotation()
     {
-        if (LeftHandNeatestEnemy()==null)
+        if (LeftHandNeatestEnemy() == null)
         {
             ShootLeftHand();
         }
-        else if( RightHandNearestEnemy() == null)
+        else if (RightHandNearestEnemy() == null)
         {
             ShootRightHand();
-        }
+        }     
         var differenceForRightHand = playerForwardPoint.position- rightHandParent.position;
         var differenceForLeftHand = playerForwardPoint.position - leftHandParent.position;
 
